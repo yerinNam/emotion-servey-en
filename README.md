@@ -13,7 +13,7 @@ Open `index.html` in a recent browser (Chrome, Edge, Safari or Firefox). No serv
 1. **Start**: enter a Participant ID.
 2. **Part 1, emotion similarity rating**: rate all 78 pairs of emotion words, one pair at a time, on a 1–10 slider. The slider must be moved before going to the next pair, and "Previous" goes back to change an answer. After the last pair the participant moves on to Part 2 and cannot return; at that point the scores are also sent to the Google Sheet tab `응답 결과(외국인)`.
 3. **Part 2, grouping emotion words**: pick a colour, then tap word cards to colour them, so that words with similar meanings share a colour. All 13 cards must be coloured to continue, and there is no way back.
-4. **Part 3, matching faces and words**: for every face, pick a 1st-choice word and rate confidence from 1 to 5. A 2nd choice is optional; if one is picked, its confidence must be rated too.
+4. **Part 3, matching faces and words**: for every face, pick a 1st-choice word and rate confidence from 1 to 5. The 2nd slot is only for parking a candidate while deciding; it must be empty for every face before submitting.
    - While choosing, the same word may be used on several faces.
    - To submit, the 13 words must each be the 1st choice for exactly one face.
 5. **Submit**: `emotion_survey_en_<ParticipantID>_<date-time>.jsonl` is downloaded.
@@ -73,7 +73,7 @@ Every line has `participant_id`, `session_id` and `part`.
 | `image_id`, `image_file` | Image ID and original file name |
 | `target_word`, `target_word_ko` | Intended emotion (English label and Korean word from the CSV) |
 | `rank1_word`, `rank1_confidence` | 1st choice and confidence (1–5) |
-| `rank2_word`, `rank2_confidence` | 2nd choice and confidence (1–5); `null` if no 2nd choice |
+| `rank2_word`, `rank2_confidence` | Always `null`, since the 2nd slot must be cleared before submitting. Words parked there are recorded in `history` |
 | `rank1_correct` | Whether the 1st choice is the intended emotion |
 | `target_in_top2` | Whether the intended emotion is the 1st or 2nd choice |
 | `n_word_changes`, `n_confidence_changes` | Number of word and confidence changes |

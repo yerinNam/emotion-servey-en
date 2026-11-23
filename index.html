@@ -223,7 +223,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <ol class="parts">
     <li><strong>Emotion similarity rating.</strong> You will see emotion words two at a time and rate how similar their meanings are, from 1 to 10. There are 78 pairs in total.</li>
     <li><strong>Grouping emotion words.</strong> Colour the 13 emotion words so that words you feel have similar meanings share the same colour.</li>
-    <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and, if you like, the next best as your 2nd choice (optional). Rate your confidence in each word you choose from 1 to 5.</li>
+    <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and rate your confidence from 1 to 5. While deciding you can park a candidate word in the 2nd slot, but when you submit each face must have only its 1st choice.</li>
   </ol>
   <div class="field">
     <label for="pid">Participant ID</label>
@@ -285,7 +285,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <header class="p2head">
     <p class="stage">Part 3 of 3</p>
     <h1>Matching Faces and Words</h1>
-    <p class="lede">For every face, choose a 1st-choice emotion word and rate your confidence. A 2nd choice is optional — add one only if another word also fits, and rate your confidence in it too. Drag a word onto a slot, or tap a word and then tap a slot. To submit, each word must be used as the 1st choice for exactly one face.</p>
+    <p class="lede">For every face, choose a 1st-choice emotion word and rate your confidence. The 2nd slot is a place to park a candidate while you decide; it must be empty for every face before you submit. Drag a word onto a slot, or tap a word and then tap a slot. To submit, each word must be used as the 1st choice for exactly one face.</p>
   </header>
   <div class="layout">
     <aside class="side">
@@ -298,7 +298,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
       <section class="savebar" aria-label="Progress and submission">
         <dl class="status">
           <div><dt>Faces with a 1st choice</dt><dd id="s1"></dd></div>
-          <div><dt>Faces with a 2nd choice (optional)</dt><dd id="s2"></dd></div>
+          <div><dt>Faces with a 2nd choice left</dt><dd id="s2"></dd></div>
           <div><dt>Words used twice as 1st</dt><dd id="sDup"></dd></div>
           <div><dt>Missing confidence ratings</dt><dd id="sConf"></dd></div>
         </dl>
@@ -684,12 +684,13 @@ function validate2(){
   P2.faceOrder.forEach(id => { const f=P2.faces[id]; if(f.r[1].word) use1[f.r[1].word].push(id); if(f.r[2].word) use2[f.r[2].word].push(id); });
   const miss1 = P2.faceOrder.filter(id => !P2.faces[id].r[1].word);
   const miss2 = P2.faceOrder.filter(id => !P2.faces[id].r[2].word);
-  const noConf = []; P2.faceOrder.forEach(id => [1,2].forEach(r => { const s=P2.faces[id].r[r]; if(s.word && s.conf==null) noConf.push({id,r}); }));
+  const has2 = P2.faceOrder.filter(id => P2.faces[id].r[2].word);   // 2nd slot must be empty on submit
+  const noConf = []; P2.faceOrder.forEach(id => [1].forEach(r => { const s=P2.faces[id].r[r]; if(s.word && s.conf==null) noConf.push({id,r}); }));
   const dup1 = CONFIG.uniqueFirst ? WORDS.filter(w => use1[w].length>1) : [];
   const unused1 = CONFIG.uniqueFirst ? P2.wordOrder.filter(w => !use1[w].length) : [];
   const dup2 = CONFIG.uniqueSecond ? WORDS.filter(w => use2[w].length>1) : [];
-  return { use1, use2, miss1, miss2, noConf, dup1, unused1, dup2,
-           ok: !miss1.length && !noConf.length && !dup1.length && !unused1.length && !dup2.length };
+  return { use1, use2, miss1, miss2, has2, noConf, dup1, unused1, dup2,
+           ok: !miss1.length && !has2.length && !noConf.length && !dup1.length && !unused1.length && !dup2.length };
 }
 function refreshP2(){
   const v = validate2();
@@ -711,10 +712,10 @@ function refreshP2(){
     [1,2].forEach(r => {
       const s = f.r[r], box = c.rank[r];
       $('.rslot',box).hidden = !!s.word;
-      $('.rslot',box).textContent = P2.armed ? `Place “${P2.armed}” here` : (r===2 ? 'Put your 2nd choice here (optional)' : 'Put your 1st choice here');
+      $('.rslot',box).textContent = P2.armed ? `Place “${P2.armed}” here` : (r===2 ? 'Park a candidate here (clear before submitting)' : 'Put your 1st choice here');
       $('.rword',box).hidden = !s.word;
       $('.rword .w',box).textContent = s.word || '';
-      $('.conf',box).hidden = !s.word;
+      $('.conf',box).hidden = !s.word || r===2;   // no confidence for the 2nd (candidate) slot
       $$('.cb',box).forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v===s.conf)));
       const pool = r===1 ? (CONFIG.uniqueFirst ? v.use1 : null) : (CONFIG.uniqueSecond ? v.use2 : null);
       const others = (pool && s.word) ? pool[s.word].filter(x=>x!==id).map(faceNo).sort((a,b)=>a-b) : [];
@@ -728,10 +729,10 @@ function refreshP2(){
 
   const n1 = N - v.miss1.length, n2 = N - v.miss2.length;
   $('#s1').textContent = `${n1} / ${N}`; $('#s1').className = n1===N ? 'ok' : '';
-  $('#s2').textContent = `${n2} / ${N}`; $('#s2').className = n2===N ? 'ok' : '';
+  $('#s2').textContent = v.has2.length; $('#s2').className = v.has2.length ? 'bad' : '';
   $('#sDup').textContent = v.dup1.length; $('#sDup').className = v.dup1.length ? 'bad' : '';
   $('#sConf').textContent = v.noConf.length; $('#sConf').className = v.noConf.length ? 'bad' : '';
-  $('#mini').textContent = v.ok ? 'Ready to submit.' : `1st ${n1}/${N}, 2nd ${n2}/${N}, repeated ${v.dup1.length}, missing confidence ${v.noConf.length}`;
+  $('#mini').textContent = v.ok ? 'Ready to submit.' : `1st ${n1}/${N}, 2nd left ${v.has2.length}, repeated ${v.dup1.length}, missing confidence ${v.noConf.length}`;
 }
 
 function openZoom(id){
@@ -750,11 +751,12 @@ $('#submitBtn').addEventListener('click', () => {
     v.dup1.forEach(w => items.push(`“${w}” is the 1st choice for faces ${nums(v.use1[w])}. Each word can be the 1st choice for only one face.`));
     v.dup2.forEach(w => items.push(`“${w}” is the 2nd choice for faces ${nums(v.use2[w])}.`));
     if(v.unused1.length) items.push(`Words not yet used as a 1st choice: ${v.unused1.join(', ')}`);
+    if(v.has2.length) items.push(`Faces that still have a 2nd choice: ${nums(v.has2)}. Before submitting, clear the 2nd slots so each face keeps only its 1st choice.`);
     if(v.noConf.length) items.push(`Missing confidence ratings: ${v.noConf.sort((a,b)=>faceNo(a.id)-faceNo(b.id)||a.r-b.r).map(x=>`face ${faceNo(x.id)} ${ord(x.r)} choice`).join(', ')}`);
     showIssues('You can’t submit yet', items);
-    const flagged = new Set([...v.miss1, ...v.noConf.map(x=>x.id), ...v.dup1.flatMap(w=>v.use1[w]), ...v.dup2.flatMap(w=>v.use2[w])]);
+    const flagged = new Set([...v.miss1, ...v.has2, ...v.noConf.map(x=>x.id), ...v.dup1.flatMap(w=>v.use1[w]), ...v.dup2.flatMap(w=>v.use2[w])]);
     flagged.forEach(id => { const el=cards[id].el; el.classList.remove('flag'); void el.offsetWidth; el.classList.add('flag'); });
-    log2('submit_blocked', null, { miss1:v.miss1.length, dup1:v.dup1.length, no_conf:v.noConf.length });
+    log2('submit_blocked', null, { miss1:v.miss1.length, rank2_left:v.has2.length, dup1:v.dup1.length, no_conf:v.noConf.length });
     return;
   }
   const submittedAt = new Date();
