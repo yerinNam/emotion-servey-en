@@ -367,7 +367,10 @@ const CONFIG = {
   simMin: 1, simMax: 10, simDefault: 1,
   // Also send similarity scores to a Google Sheet (Code.gs web-app URL). Empty string = do not send
   sheetUrl: 'https://script.google.com/macros/s/AKfycby8MnZ7NNk7ND2VsRTYR7W2MjoIX6S2tvczAmZfSTGuZcrYCqTYsS4jdYCyVCpi-m2_/exec',
-  sheetName: '응답 결과(외국인)'   // sheet tab for English-version responses
+  sheetName: '응답 결과(외국인)',  // sheet tab for English-version responses
+  // Also send the submitted JSONL to Notion (apps_script/notion_relay.gs web-app URL). Empty string = do not send
+  notionUrl: '',
+  lang: 'en'          // which Notion page (ko/en) receives the file
 };
 /* ================ */
 
@@ -809,9 +812,16 @@ $('#submitBtn').addEventListener('click', () => {
 
   S.output = { name:`emotion_survey_en_${S.pid}_${stamp(submittedAt)}.jsonl`, text: lines.map(l=>JSON.stringify(l)).join('\n') + '\n' };
   download(S.output.name, S.output.text);
+  postNotion();
   go('done');
   $('#doneText').textContent = `Your response file (${S.output.name}) has been downloaded. If you can't find it, press the button below to save it again. Once it is saved, you may close this window.`;
 });
+function postNotion(){
+  if(!CONFIG.notionUrl) return;
+  // no-cors: Apps Script web app; the response is opaque. The downloaded file is the backup.
+  fetch(CONFIG.notionUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({ lang:CONFIG.lang, name:S.output.name, text:S.output.text }) }).catch(err => console.error(err));
+}
 $('#resaveBtn').addEventListener('click', () => download(S.output.name, S.output.text));
 window.addEventListener('beforeunload', e => { if(S.page==='p0' || S.page==='p1' || S.page==='p2'){ e.preventDefault(); e.returnValue=''; } });
 </script>

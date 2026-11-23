@@ -98,6 +98,18 @@ Edit `CONFIG` in the `<script>` near the bottom of `src/survey_template.html`, t
 | `uniqueFirst` | `true` | Each word must be the 1st choice for exactly one face |
 | `uniqueSecond` | `false` | 2nd choices must not repeat either |
 
+## Sending responses to Notion
+
+On submit, the whole JSONL can be sent to Notion as one child page per participant under "인지와 정서 - 데이터 수집 (en)" (the Korean version uses the (ko) page). A Notion token cannot go in a public page, so a Google Apps Script web app sits in between.
+
+1. Create a new project at script.google.com and paste `apps_script/notion_relay.gs`.
+2. Project Settings → Script properties: add `NOTION_TOKEN` = the Notion integration secret. Never put the token in code or HTML.
+3. In Notion, add the integration to both pages (⋯ → Connections).
+4. Deploy → New deployment → Web app; Execute as: Me; Who has access: Anyone.
+5. Put the `/exec` URL in `CONFIG.notionUrl` in `src/survey_template.html` and run `python build.py`.
+
+Sending uses `no-cors`, so the page cannot confirm success; the file downloaded on the participant's computer is the backup.
+
 ## Changing images or words (rebuild)
 
 1. Replace the `NN_word.png` files and `00_감정단어_이미지_일람표.csv` in `stimuli/`. The number and Korean word in each file name must match the CSV `번호` and `감정단어` columns, and every Korean word needs an entry in `WORD_EN`.
