@@ -11,7 +11,7 @@ Open `index.html` in a recent browser (Chrome, Edge, Safari or Firefox). No serv
 ## Flow
 
 1. **Start**: enter a Participant ID.
-2. **Part 1, emotion similarity rating**: rate all 78 pairs of emotion words, one pair at a time, on a 1–10 slider. The slider must be moved before going to the next pair, and "Previous" goes back to change an answer. After the last pair the participant moves on to Part 2 and cannot return; at that point the scores are also sent to the Google Sheet tab `응답 결과(외국인)`.
+2. **Part 1, emotion similarity rating**: rate all 78 pairs of emotion words, one pair at a time, on a 0–10 slider. The slider must be moved before going to the next pair, and "Previous" goes back to change an answer. After the last pair the participant moves on to Part 2 and cannot return; at that point the scores are also sent to the Google Sheet tab `응답 결과(외국인)`.
 3. **Part 2, grouping emotion words**: pick a colour, then tap word cards to colour them, so that words with similar meanings share a colour. All 13 cards must be coloured to continue, and there is no way back.
 4. **Part 3, matching faces and words**: for every face, pick a 1st- and 2nd-choice word and rate confidence in each from 1 to 5.
    - While choosing, the same word may be used on several faces.
@@ -90,7 +90,7 @@ Edit `CONFIG` in the `<script>` near the bottom of `src/survey_template.html`, t
 | Option | Default | Description |
 |---|---|---|
 | `shufflePairs` | `true` | Randomise similarity pair order and left/right position |
-| `simMin`, `simMax`, `simDefault` | `1`, `10`, `1` | Similarity scale range and slider start |
+| `simMin`, `simMax`, `simDefault` | `0`, `10`, `0` | Similarity scale range and slider start |
 | `sheetUrl`, `sheetName` |  | Apps Script web-app URL and sheet tab for similarity scores. Set `sheetUrl` to `''` to disable |
 | `shuffleCards`, `shuffleImages`, `shuffleWords` | `true` | Randomise card, face and word-bank order |
 | `confMin`, `confMax` | `1`, `5` | Confidence scale range |
@@ -100,7 +100,7 @@ Edit `CONFIG` in the `<script>` near the bottom of `src/survey_template.html`, t
 
 ## Sending responses to Notion
 
-On submit, the whole JSONL can be sent to Notion as one child page per participant under "인지와 정서 - 데이터 수집 (en)" (the Korean version uses the (ko) page). A Notion token cannot go in a public page, so a Google Apps Script web app sits in between.
+On submit, the whole JSONL can be sent to Notion as a .jsonl file attached directly on the page "인지와 정서 - 데이터 수집 (en)" (no child pages) (the Korean version uses the (ko) page). A Notion token cannot go in a public page, so a Google Apps Script web app sits in between.
 
 1. Create a new project at script.google.com and paste `apps_script/notion_relay.gs`.
 2. Project Settings → Script properties: add `NOTION_TOKEN` = the Notion integration secret. Never put the token in code or HTML.
