@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Emotion Word Survey</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#F5F6F8; --surface:#FFFFFF; --line:#E2E4EA; --line-strong:#C9CCD5;
+  --word:#E9ECF5; --ink:#16171B; --muted:#6B6E78;
+  --primary:#2C3A6B; --primary-ink:#FFFFFF; --focus:#4A64D0;
+  --r1:#2C3A6B; --r1-ink:#FFFFFF; --r2:#1D7A72; --r2-ink:#FFFFFF;
+  --ok:#2E7A57; --ok-bg:#E5F2EB; --bad:#B3392B; --bad-bg:#FBE8E5;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131418; --surface:#1C1E24; --line:#2F323B; --line-strong:#454955;
+    --word:#2A2F3E; --ink:#ECEDF1; --muted:#A0A3AD;
+    --primary:#A9B8F2; --primary-ink:#12141B; --focus:#A9B8F2;
+    --r1:#A9B8F2; --r1-ink:#12141B; --r2:#7FD1C7; --r2-ink:#0F1A19;
+    --ok:#74CBA0; --ok-bg:#1A2C23; --bad:#F08C7E; --bad-bg:#3A211E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131418; --surface:#1C1E24; --line:#2F323B; --line-strong:#454955;
+  --word:#2A2F3E; --ink:#ECEDF1; --muted:#A0A3AD;
+  --primary:#A9B8F2; --primary-ink:#12141B; --focus:#A9B8F2;
+  --r1:#A9B8F2; --r1-ink:#12141B; --r2:#7FD1C7; --r2-ink:#0F1A19;
+  --ok:#74CBA0; --ok-bg:#1A2C23; --bad:#F08C7E; --bad-bg:#3A211E;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1{font-size:28px; line-height:1.3; font-weight:700; letter-spacing:-0.02em; margin:0 0 10px}
+h2{font-size:16px; font-weight:600; margin:0}
+.lede{color:var(--muted); margin:0 0 20px; max-width:64ch}
+.stage{color:var(--muted); font-size:14px; font-weight:600; margin:0 0 6px; font-variant-numeric:tabular-nums}
+
+.btn{appearance:none; border:0; border-radius:10px; height:48px; padding:0 22px; font:inherit; font-size:16px; font-weight:600; cursor:pointer; background:var(--primary); color:var(--primary-ink); display:inline-flex; align-items:center; justify-content:center; white-space:nowrap}
+.btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-strong)}
+.btn.small{height:38px; font-size:14px; padding:0 14px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+:is(.btn,.brush,.addbrush,.pcard,.chip,.rslot,.rm,.zoom,.cb,.swap,.nm,.field input):focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+
+/* Start / done */
+.intro{max-width:720px; margin:0 auto; padding:56px 20px 72px}
+.parts{margin:0 0 32px; padding-left:1.3em; display:grid; gap:10px; max-width:62ch}
+.field label{display:block; font-weight:600; margin-bottom:8px}
+.field input{height:48px; width:min(280px,100%); border:1px solid var(--line-strong); border-radius:10px; padding:0 14px; font:inherit; background:var(--surface); color:var(--ink)}
+.err{color:var(--bad); font-size:14px; margin:8px 0 0}
+.intro .btn{margin-top:24px}
+
+/* ===== Part 1: similarity rating ===== */
+/* English labels are long: smaller word text, keep cards readable */
+.pw{overflow-wrap:anywhere}
+.simtop{position:sticky; top:0; z-index:6; background:var(--bg); padding-top:env(safe-area-inset-top,0px)}
+.simtop .bar{height:4px; background:var(--line)}
+.simtop .fill{height:4px; width:0; background:var(--primary); transition:width .3s}
+.simtop .cnt{max-width:980px; margin:0 auto; padding:8px 20px; text-align:right; font-size:14px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums}
+.simpage{max-width:760px; padding-top:16px}
+.simcard{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:28px 24px; transition:opacity .25s}
+.simq{font-size:20px; font-weight:700; text-align:center; line-height:1.4; margin:0 0 24px}
+.pair{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.pw{background:var(--word); border-radius:14px; padding:28px 14px; text-align:center; font-size:22px; font-weight:600; line-height:1.3; display:flex; align-items:center; justify-content:center; min-height:120px}
+.simscore{text-align:center; font-size:36px; font-weight:700; margin:28px 0 10px; color:var(--line-strong); font-variant-numeric:tabular-nums}
+.simscore.on{color:var(--primary)}
+#simRange{display:block; width:100%; height:28px; margin:0; accent-color:var(--primary); cursor:pointer}
+#simRange:focus-visible{outline:2px solid var(--focus); outline-offset:4px}
+.anchors{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:6px; font-size:14px; line-height:1.35; color:var(--muted)}
+.anchors span:nth-child(2){text-align:center} .anchors span:nth-child(3){text-align:right}
+.anchors small{font-size:12px}
+.simnav{display:flex; justify-content:center; gap:12px; margin-top:24px}
+.simnav .btn{min-width:120px}
+.simnote{text-align:center; color:var(--muted); font-size:14px; margin:12px 0 0; min-height:1.55em}
+
+/* ===== Part 2: grouping by colour ===== */
+.page{max-width:980px; margin:0 auto; padding:40px 20px 96px}
+.brushbar{position:sticky; top:0; z-index:6; background:var(--bg); padding:12px 0 14px; padding-top:calc(12px + env(safe-area-inset-top,0px)); display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.brushbar .lbl{font-size:14px; color:var(--muted); margin-right:2px}
+.brush{appearance:none; font:inherit; font-size:15px; font-weight:600; color:var(--ink); height:40px; padding:0 14px 0 10px; border-radius:999px; border:1.5px solid var(--line-strong); background:var(--surface); display:inline-flex; align-items:center; gap:8px; cursor:pointer}
+.brush .sw{width:18px; height:18px; border-radius:50%; background:var(--c); flex:none}
+.brush .n{font-size:12px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
+.brush[aria-pressed="true"]{border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--c)}
+.addbrush{appearance:none; font:inherit; font-size:15px; font-weight:600; height:40px; padding:0 14px; border-radius:999px; border:1.5px dashed var(--line-strong); background:transparent; color:var(--muted); cursor:pointer}
+.addbrush:disabled{opacity:.4; cursor:not-allowed}
+.pcards{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px}
+.pcard{appearance:none; font:inherit; font-size:16px; line-height:1.3; font-weight:600; color:var(--ink); background:var(--word); border:2px solid transparent; border-radius:14px; min-height:84px; padding:12px; position:relative; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; transition:background-color .12s, border-color .12s}
+.pcard:hover{border-color:var(--brush)}
+.pcard.on{background:color-mix(in srgb, var(--c) 26%, var(--surface)); border-color:var(--c)}
+.pcard .badge{position:absolute; top:7px; left:7px; min-width:22px; height:22px; padding:0 6px; border-radius:6px; background:var(--c); color:#fff; font-size:12px; font-weight:700; display:grid; place-items:center; font-variant-numeric:tabular-nums}
+.summary{list-style:none; margin:24px 0 0; padding:0; display:grid; gap:8px}
+.summary li{display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--c); border-radius:10px; padding:10px 12px}
+.summary b{font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums}
+.summary .ws{flex:1; min-width:150px}
+.nm{height:34px; width:160px; border:1px solid var(--line); border-radius:8px; padding:0 10px; font:inherit; font-size:14px; background:var(--surface); color:var(--ink)}
+.summary-empty{color:var(--muted); font-size:14px; margin:20px 0 0}
+.pagefoot{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-top:28px; padding-top:20px; border-top:1px solid var(--line)}
+.pagefoot p{margin:0; color:var(--muted); font-size:14.5px; max-width:52ch}
+
+/* ===== Part 3: face matching ===== */
+.p2head{max-width:1360px; margin:0 auto; padding:32px 24px 0}
+.layout{display:grid; grid-template-columns:320px minmax(0,1fr); gap:28px; max-width:1360px; margin:0 auto; padding:16px 24px 48px}
+.side{position:sticky; top:calc(16px + env(safe-area-inset-top,0px)); align-self:start; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 32px); overflow:auto}
+.bank,.savebar{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px}
+.hint{color:var(--muted); font-size:13.5px; margin:6px 0 14px}
+.hint.arming{color:var(--primary); font-weight:600}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{appearance:none; font:inherit; font-size:14px; line-height:1.25; text-align:left; font-weight:600; color:var(--ink); background:var(--word); border:0; border-radius:10px; min-height:42px; padding:6px 12px; display:inline-flex; align-items:center; gap:7px; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:manipulation}
+.chip .cnt{font-size:12px; font-weight:700; min-width:20px; height:20px; border-radius:10px; display:none; place-items:center; padding:0 6px; font-variant-numeric:tabular-nums}
+.chip.used{background:transparent; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line)}
+.chip.used .cnt{display:inline-grid; background:var(--ok-bg); color:var(--ok)}
+.chip.dup{background:var(--bad-bg); color:var(--bad); box-shadow:inset 0 0 0 1.5px var(--bad)}
+.chip.dup .cnt{display:inline-grid; background:var(--bad); color:var(--surface)}
+.chip[aria-pressed="true"]{background:var(--primary); color:var(--primary-ink); box-shadow:none}
+.legend{color:var(--muted); font-size:12.5px; margin:12px 0 0}
+.status{margin:0 0 14px; display:grid; gap:6px; font-size:14px}
+.status div{display:flex; justify-content:space-between; gap:8px}
+.status dt{color:var(--muted)}
+.status dd{margin:0; font-weight:600; font-variant-numeric:tabular-nums}
+.status dd.bad{color:var(--bad)} .status dd.ok{color:var(--ok)}
+.mini{display:none; margin:0; font-size:13.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+.savebar .btn{width:100%}
+
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px; align-content:start}
+.face{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s}
+.photo{position:relative; margin:0; aspect-ratio:1/1; background:#777}
+.photo img{width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; user-select:none}
+.num{position:absolute; left:10px; top:10px; min-width:30px; height:30px; padding:0 8px; border-radius:8px; background:rgba(18,19,24,.74); color:#fff; font-weight:700; font-size:15px; display:grid; place-items:center; font-variant-numeric:tabular-nums}
+.zoom{position:absolute; right:10px; top:10px; width:34px; height:34px; border:0; border-radius:8px; background:rgba(18,19,24,.6); color:#fff; display:grid; place-items:center; cursor:zoom-in}
+.zoom svg{width:18px; height:18px}
+.ranks{padding:12px; display:grid; gap:10px}
+.rank{--rc:var(--r1); --rc-ink:var(--r1-ink); border-radius:10px; padding:8px 8px 8px 10px; background:color-mix(in srgb, var(--rc) 6%, var(--surface)); border:1px solid color-mix(in srgb, var(--rc) 28%, var(--line)); border-left:4px solid var(--rc)}
+.rank[data-rank="2"]{--rc:var(--r2); --rc-ink:var(--r2-ink)}
+.rank[data-rank="2"]:not(.filled){background:transparent; border-style:dashed; border-left-style:solid}
+.rrow{display:flex; align-items:center; gap:8px}
+.rlabel{font-size:13px; font-weight:700; color:var(--rc); white-space:nowrap; min-width:36px}
+.rslot{appearance:none; flex:1; min-width:0; min-height:44px; border:1.5px dashed color-mix(in srgb, var(--rc) 45%, var(--line-strong)); border-radius:8px; background:var(--surface); color:var(--muted); font:inherit; font-size:13px; line-height:1.35; padding:6px 8px; cursor:pointer}
+.rword{flex:1; min-width:0; position:relative; min-height:44px; border-radius:8px; background:color-mix(in srgb, var(--rc) 16%, var(--surface)); display:flex; align-items:center; justify-content:center; text-align:center; font-size:15px; line-height:1.3; font-weight:600; padding:4px 34px}
+.rm{position:absolute; right:4px; top:50%; transform:translateY(-50%); width:30px; height:30px; border:0; border-radius:8px; background:transparent; color:var(--muted); font-size:19px; line-height:1; cursor:pointer}
+.conf{margin-top:8px}
+.conf .q{font-size:12.5px; color:var(--muted); margin:0 0 4px}
+.cbtns{display:grid; grid-template-columns:repeat(5,1fr); gap:4px}
+.cb{appearance:none; height:34px; border:1px solid var(--line-strong); border-radius:7px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; font-weight:600; cursor:pointer; font-variant-numeric:tabular-nums; padding:0}
+.cb[aria-pressed="true"]{background:var(--rc); border-color:var(--rc); color:var(--rc-ink)}
+.canchor{display:flex; justify-content:space-between; gap:6px; font-size:11.5px; color:var(--muted); margin-top:3px}
+.dupnote{color:var(--bad); font-size:12.5px; margin:6px 0 0}
+.rank.dup{border-color:var(--bad); border-left-color:var(--bad); background:var(--bad-bg)}
+.rank.dup .rword{background:color-mix(in srgb, var(--bad) 18%, var(--surface)); color:var(--bad)}
+.swap{appearance:none; justify-self:end; border:0; background:transparent; color:var(--muted); font:inherit; font-size:13px; font-weight:600; padding:4px 6px; border-radius:6px; cursor:pointer}
+.swap:hover{color:var(--ink)}
+.rank.over{box-shadow:0 0 0 2px var(--rc)}
+body.arming .face .rslot{border-color:var(--rc); color:var(--rc); font-weight:600}
+body.arming .face{cursor:copy}
+.face.over{box-shadow:0 0 0 3px var(--primary)}
+.face.flag{animation:flag 1.4s ease}
+@keyframes flag{0%,40%{box-shadow:0 0 0 3px var(--bad)} 100%{box-shadow:0 0 0 0 transparent}}
+
+dialog{border:0; border-radius:16px; padding:0; background:var(--surface); color:var(--ink); max-width:min(92vw,560px)}
+dialog::backdrop{background:rgba(10,11,14,.55)}
+.dlg{padding:24px}
+.dlg h2{font-size:19px; margin:0 0 12px}
+.dlg ul{margin:0 0 20px; padding-left:1.2em; display:grid; gap:6px}
+#zoom{max-width:min(96vw,1254px)}
+#zoom img{display:block; max-width:100%; max-height:calc(100dvh - 120px); width:auto; height:auto; margin:0 auto}
+#zoom .zbar{display:flex; justify-content:space-between; align-items:center; padding:12px 16px}
+.toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50; max-width:90vw}
+.toast.show{opacity:1; transform:translate(-50%,0)}
+
+@media (max-width:860px){
+  .p2head{padding:24px 12px 0}
+  .layout{grid-template-columns:minmax(0,1fr); gap:14px; padding:8px 12px calc(112px + env(safe-area-inset-bottom,0px))}
+  .side{display:contents}
+  .bank{position:sticky; top:0; z-index:10; min-width:0; margin:0 -12px; border-radius:0; border-width:0 0 1px; padding:12px; padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  .bank .hint{margin:4px 0 10px}
+  .chips{flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px}
+  .chip{flex:none; max-width:240px}
+  .legend{display:none}
+  .savebar{position:fixed; left:0; right:0; bottom:0; z-index:10; border-radius:0; border-width:1px 0 0; padding:10px 14px; padding-bottom:calc(10px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; gap:12px}
+  .status{display:none}
+  .mini{display:block; flex:1; min-width:0}
+  .savebar .btn{width:auto}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+  .ranks{padding:8px; gap:8px}
+  .rank{padding:6px 6px 6px 8px}
+  .rrow{flex-wrap:wrap; gap:4px}
+  .rlabel{min-width:0}
+  .rslot,.rword{flex-basis:100%}
+  .rword{font-size:14px}
+  .canchor{font-size:10.5px}
+}
+@media (max-width:640px){
+  .intro{padding:36px 16px 56px}
+  .page{padding:24px 12px 80px}
+  h1{font-size:23px}
+  .pcards{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+  .pcard{font-size:14.5px; min-height:66px; padding:8px}
+  .brush,.addbrush{height:36px; font-size:14px}
+  .simcard{padding:22px 16px}
+  .simq{font-size:18px}
+  .pw{font-size:18px; padding:20px 8px; min-height:100px}
+  .simtop .cnt{padding:8px 12px}
+}
+@media (max-width:360px){ .grid{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+
+<!-- Start -->
+<section class="intro" id="intro">
+  <h1>Emotion Word Survey</h1>
+  <p class="lede">This survey has three parts. There are no right or wrong answers, so please answer based on how you feel.</p>
+  <ol class="parts">
+    <li><strong>Emotion similarity rating.</strong> You will see emotion words two at a time and rate how similar their meanings are, from 1 to 10. There are 78 pairs in total.</li>
+    <li><strong>Grouping emotion words.</strong> Colour the 13 emotion words so that words you feel have similar meanings share the same colour.</li>
+    <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and, if you like, the next best as your 2nd choice (optional). Rate your confidence in each word you choose from 1 to 5.</li>
+  </ol>
+  <div class="field">
+    <label for="pid">Participant ID</label>
+    <input id="pid" autocomplete="off" spellcheck="false" placeholder="e.g. P01">
+    <p class="err" id="pidErr" hidden>Please enter your Participant ID to start.</p>
+  </div>
+  <button class="btn" id="startBtn" type="button">Start</button>
+</section>
+
+<!-- Part 1: similarity rating -->
+<div id="p0" hidden>
+  <div class="simtop">
+    <div class="bar"><div class="fill" id="simFill"></div></div>
+    <div class="cnt" id="simCount"></div>
+  </div>
+  <main class="page simpage">
+    <p class="stage">Part 1 of 3</p>
+    <h1>Emotion Similarity Rating</h1>
+    <p class="lede">Move the slider to rate how similar the meanings of the two emotion words are, from 1 to 10. You need to move the slider before you can go to the next pair, and you can press “Previous” to go back and change an earlier answer.</p>
+    <div class="simcard" id="simCard">
+      <p class="simq">How semantically similar do you think these two emotions are?</p>
+      <div class="pair"><div class="pw" id="simW1"></div><div class="pw" id="simW2"></div></div>
+      <div class="simscore" id="simScore" aria-live="polite"></div>
+      <input type="range" id="simRange" step="1">
+      <div class="anchors" aria-hidden="true">
+        <span>Not at all similar<br><small id="simMinLbl"></small></span>
+        <span>Moderate</span>
+        <span>Extremely similar<br><small id="simMaxLbl"></small></span>
+      </div>
+    </div>
+    <div class="simnav">
+      <button class="btn ghost" id="simPrev" type="button">Previous</button>
+      <button class="btn" id="simNext" type="button">Next</button>
+    </div>
+    <p class="simnote" id="simNote" aria-live="polite"></p>
+  </main>
+</div>
+
+<!-- Part 2 -->
+<main class="page" id="p1" hidden>
+  <p class="stage">Part 2 of 3</p>
+  <h1>Grouping Emotion Words</h1>
+  <p class="lede">Give emotions you feel are similar in meaning the same colour. Pick a colour above, then tap a card to colour it; tap it again with the same colour to clear it. Tapping with a different colour selected switches the card to that colour. You can make as many groups as you like, of any size, and a word can be in a group on its own.</p>
+  <div class="brushbar">
+    <span class="lbl">Colour</span>
+    <div id="brushes" style="display:contents"></div>
+  </div>
+  <div class="pcards" id="pcards"></div>
+  <ul class="summary" id="summary"></ul>
+  <p class="summary-empty" id="summaryEmpty">Coloured cards will be listed here by group. You can give each group a name if you like.</p>
+  <div class="pagefoot">
+    <p id="p1hint" aria-live="polite"></p>
+    <button class="btn" id="nextBtn" type="button">Next page</button>
+  </div>
+</main>
+
+<!-- Part 3 -->
+<div id="p2" hidden>
+  <header class="p2head">
+    <p class="stage">Part 3 of 3</p>
+    <h1>Matching Faces and Words</h1>
+    <p class="lede">For every face, choose a 1st-choice emotion word and rate your confidence. A 2nd choice is optional — add one only if another word also fits, and rate your confidence in it too. Drag a word onto a slot, or tap a word and then tap a slot. To submit, each word must be used as the 1st choice for exactly one face.</p>
+  </header>
+  <div class="layout">
+    <aside class="side">
+      <section class="bank" aria-label="Emotion words">
+        <h2>Emotion words</h2>
+        <p class="hint" id="bankHint" aria-live="polite"></p>
+        <div class="chips" id="chips"></div>
+        <p class="legend">The number shows how many faces use that word as their 1st choice. Red means the word is the 1st choice for more than one face.</p>
+      </section>
+      <section class="savebar" aria-label="Progress and submission">
+        <dl class="status">
+          <div><dt>Faces with a 1st choice</dt><dd id="s1"></dd></div>
+          <div><dt>Faces with a 2nd choice (optional)</dt><dd id="s2"></dd></div>
+          <div><dt>Words used twice as 1st</dt><dd id="sDup"></dd></div>
+          <div><dt>Missing confidence ratings</dt><dd id="sConf"></dd></div>
+        </dl>
+        <p class="mini" id="mini"></p>
+        <button class="btn" id="submitBtn" type="button">Submit</button>
+      </section>
+    </aside>
+    <main class="grid" id="grid" aria-label="Face photos"></main>
+  </div>
+</div>
+
+<!-- Done -->
+<section class="intro" id="done" hidden>
+  <h1>All done — thank you!</h1>
+  <p class="lede" id="doneText"></p>
+  <button class="btn ghost" id="resaveBtn" type="button">Save response file again</button>
+</section>
+
+<dialog id="zoom">
+  <img alt="">
+  <div class="zbar"><strong id="zoomTitle"></strong><button class="btn ghost small" type="button" data-close>Close</button></div>
+</dialog>
+<dialog id="issues">
+  <div class="dlg">
+    <h2 id="issueTitle"></h2>
+    <ul id="issueList"></ul>
+    <button class="btn" type="button" data-close>OK</button>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== Settings ===== */
+const ITEMS = __ITEMS__;     // 13 rows of stimuli/00_감정단어_이미지_일람표.csv + embedded images
+// English label shown for each Korean emotion word (CSV order). Used everywhere in this version.
+const WORD_EN = {
+  '열망': 'Longing / yearning',
+  '불쾌함': 'Displeasure / unease',
+  '탐욕': 'Material Greed',
+  '옹졸함': 'Pettiness / small-mindedness',
+  '씁쓸함': 'Bitterness',
+  '불만족': 'Dissatisfaction',
+  '못마땅함': 'Disapproval / disgruntlement',
+  '시기': "Jealousy (begrudging someone's good fortune)",
+  '분함': 'Resentment',
+  '탐냄': 'Coveting / Wanting what someone else has',
+  '언짢음': 'Feeling really irritated',
+  '낙담': 'Discouragement',
+  '소유욕': 'Possessiveness / desire to own'
+};
+ITEMS.forEach(it => { it.word_ko = it.word; it.word = WORD_EN[it.word]; if(!it.word) throw new Error('No English label for ' + it.word_ko); });
+const CONFIG = {
+  shuffleCards: true,        // randomise card order (part 2)
+  shuffleImages: true,       // randomise face order (part 3)
+  shuffleWords: true,        // randomise word-bank order (part 3)
+  confMin: 1, confMax: 5,    // confidence scale
+  confQuestion: 'How confident are you?',
+  confLabels: ['Not at all confident', 'Very confident'],
+  uniqueFirst: true,         // on submit, each word must be the 1st choice for exactly one face (13:13)
+  uniqueSecond: false,       // if true, 2nd choices must not repeat either
+  // Part 1 similarity rating (78 pairs)
+  shufflePairs: true,        // randomise pair order (and left/right position within a pair)
+  simMin: 1, simMax: 10, simDefault: 1,
+  // Also send similarity scores to a Google Sheet (Code.gs web-app URL). Empty string = do not send
+  sheetUrl: 'https://script.google.com/macros/s/AKfycby8MnZ7NNk7ND2VsRTYR7W2MjoIX6S2tvczAmZfSTGuZcrYCqTYsS4jdYCyVCpi-m2_/exec',
+  sheetName: '응답 결과(외국인)'   // sheet tab for English-version responses
+};
+/* ================ */
+
+const WORDS = ITEMS.map(it => it.word);
+const N = ITEMS.length;
+const byId = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ord = r => r===1 ? '1st' : '2nd';
+const PALETTE = ['#3F5FB0','#D0573A','#2E8A5F','#8B55B5','#C28F12','#1F8C9C','#B23C77','#6B7A2A','#5B6B8E','#A0522D','#2F6F6F','#7A4E9C','#8C6D1A'];
+const CONF_VALUES = Array.from({length:CONFIG.confMax-CONFIG.confMin+1}, (_,i)=>CONFIG.confMin+i);
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function stamp(d=new Date()){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
+function download(name, text){
+  const blob = new Blob([text], {type:'application/jsonl'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+let toastTimer;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
+function showIssues(title, items){
+  $('#issueTitle').textContent = title;
+  $('#issueList').innerHTML = items.map(t=>`<li>${esc(t)}</li>`).join('');
+  $('#issues').showModal();
+}
+$$('dialog').forEach(d => d.addEventListener('click', e => { if(e.target===d || e.target.closest('[data-close]')) d.close(); }));
+
+const S = {
+  pid:'', sessionId: Math.random().toString(36).slice(2,10), startedAt:null, t0:0, page:'intro', output:null,
+  p0:{ pairs:[], idx:0, resp:[], score:null, touched:false, qStart:0, busy:false, startedAt:null, finishedAt:null, sheet:'not_sent' },
+  p1:{ order:[], groups:[], nextId:1, brush:null, assign:{}, events:[], startedAt:null, finishedAt:null },
+  p2:{ faceOrder:[], wordOrder:[], faces:{}, events:[], armed:null, startedAt:null }
+};
+const tms = () => Math.round(performance.now()-S.t0);
+function go(page){
+  ['intro','p0','p1','p2','done'].forEach(id => $('#'+id).hidden = (id!==page));
+  S.page = page; window.scrollTo(0,0);
+}
+
+/* ===================== Start ===================== */
+$('#startBtn').addEventListener('click', () => {
+  const pid = $('#pid').value.trim();
+  if(!pid){ $('#pidErr').hidden=false; $('#pid').focus(); return; }
+  S.pid = pid; S.startedAt = new Date(); S.t0 = performance.now();
+  initP0(); go('p0');
+});
+$('#pid').addEventListener('keydown', e => { if(e.key==='Enter') $('#startBtn').click(); });
+
+/* ===================== Part 1: similarity rating ===================== */
+const P0 = S.p0;
+// Fixed pair list for sheet column order (CSV order): "Longing / yearning - Displeasure / unease", … 78 pairs
+const CANONICAL_PAIRS = [];
+WORDS.forEach((a,i) => WORDS.slice(i+1).forEach(b => CANONICAL_PAIRS.push(`${a} - ${b}`)));
+function initP0(){
+  let id = 1;
+  P0.pairs = [];
+  WORDS.forEach((a,i) => WORDS.slice(i+1).forEach(b => {
+    P0.pairs.push({ id:id++, pair_key:`${a} - ${b}`, words:(CONFIG.shufflePairs && Math.random()<0.5) ? [b,a] : [a,b] });
+  }));
+  if(CONFIG.shufflePairs) shuffle(P0.pairs);
+  const r = $('#simRange');
+  r.min = CONFIG.simMin; r.max = CONFIG.simMax;
+  r.setAttribute('aria-label', `Similarity score (${CONFIG.simMin} to ${CONFIG.simMax})`);
+  $('#simMinLbl').textContent = `(${CONFIG.simMin} pt)`; $('#simMaxLbl').textContent = `(${CONFIG.simMax} pts)`;
+  P0.startedAt = new Date();
+  loadSim(0);
+}
+function loadSim(i){
+  const prev = P0.resp[i];
+  P0.idx = i; P0.score = prev ? prev.score : CONFIG.simDefault; P0.touched = !!prev; P0.qStart = performance.now();
+  const q = P0.pairs[i];
+  $('#simW1').textContent = q.words[0]; $('#simW2').textContent = q.words[1];
+  $('#simRange').value = P0.score;
+  renderSim();
+}
+function renderSim(){
+  const total = P0.pairs.length, last = P0.idx===total-1;
+  $('#simFill').style.width = `${P0.idx/total*100}%`;
+  $('#simCount').textContent = `${P0.idx+1} / ${total}`;
+  $('#simScore').textContent = P0.touched ? `${P0.score}` : '–';
+  $('#simScore').classList.toggle('on', P0.touched);
+  $('#simPrev').disabled = P0.idx===0;
+  $('#simNext').disabled = !P0.touched;
+  $('#simNext').textContent = last ? 'Go to Part 2' : 'Next';
+  $('#simNote').textContent = !P0.touched ? 'Move the slider to choose a score.'
+    : last ? 'This is the last pair. Once you go to Part 2 you cannot come back to this part.' : '';
+}
+function saveSim(){
+  const q = P0.pairs[P0.idx], prev = P0.resp[P0.idx];
+  const dur = Math.round(performance.now()-P0.qStart) + (prev ? prev.duration_ms : 0);   // time accumulates when revisited
+  P0.resp[P0.idx] = { order:P0.idx+1, question_id:q.id, pair_key:q.pair_key, word1:q.words[0], word2:q.words[1], score:P0.score, duration_ms:dur };
+  P0.qStart = performance.now();
+}
+function fadeSim(fn){
+  const card = $('#simCard'); P0.busy = true; card.style.opacity = 0;
+  setTimeout(() => { fn(); card.style.opacity = 1; P0.busy = false; }, 250);
+}
+function touchSim(){ if(!P0.touched){ P0.touched = true; renderSim(); } }
+$('#simRange').addEventListener('input', e => { P0.score = +e.target.value; P0.touched = true; renderSim(); });
+$('#simRange').addEventListener('pointerup', touchSim);
+$('#simRange').addEventListener('keydown', e => { if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)) touchSim(); });
+$('#simPrev').addEventListener('click', () => {
+  if(P0.busy || P0.idx===0) return;
+  if(P0.touched) saveSim();
+  fadeSim(() => loadSim(P0.idx-1));
+});
+$('#simNext').addEventListener('click', () => {
+  if(P0.busy || !P0.touched) return;
+  saveSim();
+  if(P0.idx < P0.pairs.length-1) return fadeSim(() => loadSim(P0.idx+1));
+  P0.finishedAt = new Date();
+  postSheet();
+  initP1(); go('p1');
+});
+function postSheet(){
+  if(!CONFIG.sheetUrl){ P0.sheet = 'disabled'; return; }
+  // Send one row per participant, scores in fixed pair order regardless of presentation order
+  const byKey = Object.fromEntries(P0.resp.map(r => [r.pair_key, r.score]));
+  const payload = { sheetName:CONFIG.sheetName, fixedHeaders:['Timestamp','Participant_ID','Total_Duration_ms'], code:S.pid, totalMs:P0.resp.reduce((t,r)=>t+r.duration_ms,0),
+                    headers:CANONICAL_PAIRS, scores:CANONICAL_PAIRS.map(k => byKey[k] ?? '') };
+  P0.sheet = 'sending';
+  // text/plain + no-cors for Apps Script web apps. The response is opaque, so we only know it was sent
+  fetch(CONFIG.sheetUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) })
+    .then(() => { P0.sheet = 'sent'; })
+    .catch(err => { console.error(err); P0.sheet = 'failed'; });
+}
+
+/* ===================== Part 2: grouping by colour ===================== */
+const P1 = S.p1;
+const gColor = g => PALETTE[(g.num-1) % PALETTE.length];
+const gOf = w => P1.groups.find(g => g.id===P1.assign[w]) || null;
+const gWords = g => P1.order.filter(w => P1.assign[w]===g.id);
+function log1(action, extra={}){ P1.events.push(Object.assign({ t_ms:tms(), action }, extra)); }
+function addGroup(){
+  if(P1.groups.length >= N) return;
+  const g = { id:'g'+P1.nextId, num:P1.nextId, name:'' }; P1.nextId++;
+  P1.groups.push(g); P1.brush = g.id;
+  log1('add_group', { group_id:g.id });
+}
+function initP1(){
+  P1.order = WORDS.slice(); if(CONFIG.shuffleCards) shuffle(P1.order);
+  P1.startedAt = new Date();
+  addGroup(); renderP1();
+}
+function renderP1(){
+  const cur = P1.groups.find(g => g.id===P1.brush);
+  $('#brushes').innerHTML = P1.groups.map(g => {
+    const n = gWords(g).length;
+    return `<button class="brush" type="button" data-g="${g.id}" aria-pressed="${g.id===P1.brush}" style="--c:${gColor(g)}"><span class="sw" aria-hidden="true"></span>Group ${g.num}<span class="n">${n ? n : ''}</span></button>`;
+  }).join('') + `<button class="addbrush" id="addBrush" type="button"${P1.groups.length>=N?' disabled':''}>+ Add colour</button>`;
+
+  $('#pcards').style.setProperty('--brush', cur ? gColor(cur) : 'transparent');
+  $('#pcards').innerHTML = P1.order.map(w => {
+    const g = gOf(w);
+    return `<button class="pcard${g?' on':''}" type="button" data-w="${esc(w)}"${g?` style="--c:${gColor(g)}"`:''} aria-label="${esc(w)}, ${g?`group ${g.num}`:'not coloured yet'}">${g?`<span class="badge" aria-hidden="true">${g.num}</span>`:''}${esc(w)}</button>`;
+  }).join('');
+
+  const used = P1.groups.filter(g => gWords(g).length);
+  $('#summary').innerHTML = used.map(g => `<li style="--c:${gColor(g)}"><b>Group ${g.num}</b><span class="ws">${esc(gWords(g).join(', '))}</span><input class="nm" data-g="${g.id}" value="${esc(g.name)}" placeholder="Name (optional)" aria-label="Group ${g.num} name"></li>`).join('');
+  $('#summaryEmpty').hidden = used.length > 0;
+
+  const left = P1.order.filter(w => !P1.assign[w]).length;
+  $('#p1hint').textContent = left
+    ? `${left} card${left>1?'s are':' is'} not coloured yet. Colour every card to continue to the next page.`
+    : `All cards are coloured, in ${used.length} group${used.length>1?'s':''}. Once you go to the next page you cannot come back to this part.`;
+}
+$('#p1').addEventListener('click', e => {
+  const b = e.target.closest('.brush');
+  if(b){ P1.brush = b.dataset.g; renderP1(); return; }
+  if(e.target.closest('#addBrush')){ addGroup(); renderP1(); return; }
+  const c = e.target.closest('.pcard');
+  if(c){
+    const w = c.dataset.w, prev = P1.assign[w] || null;
+    if(!P1.brush){ toast('Pick a colour first.'); return; }
+    if(prev === P1.brush){ delete P1.assign[w]; log1('erase', { word:w, prev_group_id:prev }); }
+    else { P1.assign[w] = P1.brush; log1('paint', { word:w, group_id:P1.brush, prev_group_id:prev }); }
+    renderP1();
+    const again = $(`.pcard[data-w="${CSS.escape(w)}"]`); if(again) again.focus({preventScroll:true});
+  }
+});
+$('#p1').addEventListener('input', e => { if(e.target.classList.contains('nm')){ const g=P1.groups.find(x=>x.id===e.target.dataset.g); if(g) g.name=e.target.value; } });
+$('#p1').addEventListener('change', e => { if(e.target.classList.contains('nm')){ const g=P1.groups.find(x=>x.id===e.target.dataset.g); if(g){ g.name=e.target.value.trim(); log1('rename', { group_id:g.id, name:g.name }); } } });
+$('#nextBtn').addEventListener('click', () => {
+  const left = P1.order.filter(w => !P1.assign[w]);
+  if(left.length){
+    showIssues('You can’t go to the next page yet', [`Cards not coloured: ${left.join(', ')}`, 'Please give every card a group colour. A word can be in a group on its own.']);
+    log1('next_blocked', { uncolored:left });
+    return;
+  }
+  P1.finishedAt = new Date(); log1('finish');
+  initP2(); go('p2');
+});
+
+/* ===================== Part 3: 1st/2nd choice + confidence ===================== */
+const P2 = S.p2;
+const cards = {};
+const faceNo = id => P2.faceOrder.indexOf(id) + 1;
+function log2(action, id, extra={}){ P2.events.push(Object.assign({ t_ms:tms(), action, image_id:id||null }, extra)); }
+const SVG_ZOOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8.5v5M8.5 11h5"/></svg>';
+
+function initP2(){
+  P2.startedAt = new Date();
+  P2.faceOrder = ITEMS.map(it=>it.id); if(CONFIG.shuffleImages) shuffle(P2.faceOrder);
+  P2.wordOrder = WORDS.slice(); if(CONFIG.shuffleWords) shuffle(P2.wordOrder);
+  ITEMS.forEach(it => { P2.faces[it.id] = { r:{1:{word:null,conf:null}, 2:{word:null,conf:null}}, wordChanges:0, confChanges:0 }; });
+  buildBank(); buildGrid(); refreshP2();
+}
+function buildBank(){
+  $('#chips').innerHTML = P2.wordOrder.map(w => `<button class="chip" type="button" draggable="true" data-word="${esc(w)}" aria-pressed="false"><span>${esc(w)}</span><span class="cnt" aria-hidden="true"></span></button>`).join('');
+  $$('.chip').forEach(ch => {
+    const w = ch.dataset.word;
+    ch.addEventListener('click', () => arm(P2.armed===w ? null : w));
+    ch.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', w); e.dataTransfer.effectAllowed='copy'; arm(null); });
+  });
+}
+function arm(w){ P2.armed = w; document.body.classList.toggle('arming', !!w); refreshP2(); }
+
+function rankHTML(r, n){
+  return `<div class="rank" data-rank="${r}">
+    <div class="rrow">
+      <span class="rlabel">${ord(r)}</span>
+      <button class="rslot" type="button" data-rank="${r}"></button>
+      <div class="rword" hidden><span class="w"></span><button class="rm" type="button" data-rank="${r}" aria-label="Remove face ${n} ${ord(r)} choice">×</button></div>
+    </div>
+    <div class="conf" hidden>
+      <p class="q">${esc(CONFIG.confQuestion)}</p>
+      <div class="cbtns" role="group" aria-label="Face ${n} ${ord(r)} choice confidence">${CONF_VALUES.map(v=>`<button class="cb" type="button" data-rank="${r}" data-v="${v}" aria-pressed="false">${v}</button>`).join('')}</div>
+      <div class="canchor" aria-hidden="true"><span>${esc(CONFIG.confLabels[0])}</span><span>${esc(CONFIG.confLabels[1])}</span></div>
+    </div>
+    <p class="dupnote" hidden></p>
+  </div>`;
+}
+function buildGrid(){
+  const grid = $('#grid'); grid.innerHTML='';
+  P2.faceOrder.forEach((id,i) => {
+    const n=i+1, it=byId[id];
+    const el = document.createElement('article');
+    el.className='face'; el.dataset.id=id;
+    el.innerHTML = `
+      <figure class="photo">
+        <img src="${it.src}" alt="Face photo ${n}" draggable="false" decoding="async">
+        <span class="num" aria-hidden="true">${n}</span>
+        <button class="zoom" type="button" aria-label="Enlarge face ${n}">${SVG_ZOOM}</button>
+      </figure>
+      <div class="ranks">${rankHTML(1,n)}${rankHTML(2,n)}<button class="swap" type="button" hidden>Swap choices ⇅</button></div>`;
+    grid.appendChild(el);
+    cards[id] = { el, rank:{1:$('.rank[data-rank="1"]',el), 2:$('.rank[data-rank="2"]',el)}, swap:$('.swap',el) };
+
+    el.addEventListener('click', e => {
+      const t = e.target;
+      if(t.closest('.zoom')) return openZoom(id);
+      const rm = t.closest('.rm'); if(rm) return clearRank(id, +rm.dataset.rank);
+      const cb = t.closest('.cb'); if(cb) return setConf(id, +cb.dataset.rank, +cb.dataset.v);
+      if(t.closest('.swap')) return swapRanks(id);
+      const rk = t.closest('.rank');
+      if(P2.armed){ rk ? place(id, +rk.dataset.rank, P2.armed) : autoPlace(id, P2.armed); return; }
+      if(t.closest('.rslot')) toast('First pick a word from the emotion word list.');
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect='copy';
+      const rk = e.target.closest('.rank');
+      el.classList.toggle('over', !rk);
+      [1,2].forEach(r => cards[id].rank[r].classList.toggle('over', cards[id].rank[r]===rk));
+    });
+    el.addEventListener('dragleave', e => { if(!el.contains(e.relatedTarget)){ el.classList.remove('over'); [1,2].forEach(r=>cards[id].rank[r].classList.remove('over')); } });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const w = e.dataTransfer.getData('text/plain'), rk = e.target.closest('.rank');
+      el.classList.remove('over'); [1,2].forEach(r=>cards[id].rank[r].classList.remove('over'));
+      if(!P2.wordOrder.includes(w)) return;
+      rk ? place(id, +rk.dataset.rank, w) : autoPlace(id, w);
+    });
+  });
+}
+
+function autoPlace(id, w){
+  const f = P2.faces[id];
+  if(f.r[1].word===w || f.r[2].word===w){ arm(null); return; }
+  if(!f.r[1].word) return place(id, 1, w);
+  if(!f.r[2].word) return place(id, 2, w);
+  toast('This face already has a 1st and 2nd choice. Tap the slot you want to replace.');
+}
+function place(id, r, w){
+  const f = P2.faces[id], o = 3-r;
+  arm(null);
+  if(f.r[r].word===w) return;
+  if(f.r[o].word===w){                     // word already in the other slot of this face → swap
+    [f.r[r], f.r[o]] = [f.r[o], f.r[r]];
+    log2('swap', id, { rank1:f.r[1].word, rank2:f.r[2].word });
+  } else {
+    const prev = f.r[r].word;
+    f.r[r] = { word:w, conf:null }; f.wordChanges++;
+    log2(prev ? 'replace' : 'assign', id, { rank:r, word:w, prev_word:prev });
+  }
+  cards[id].el.classList.remove('flag');
+  refreshP2();
+}
+function clearRank(id, r){
+  const f = P2.faces[id]; if(!f.r[r].word) return;
+  const prev = f.r[r].word; f.r[r] = { word:null, conf:null }; f.wordChanges++;
+  log2('remove', id, { rank:r, prev_word:prev }); refreshP2();
+}
+function swapRanks(id){
+  const f = P2.faces[id]; [f.r[1], f.r[2]] = [f.r[2], f.r[1]];
+  log2('swap', id, { rank1:f.r[1].word, rank2:f.r[2].word }); refreshP2();
+}
+function setConf(id, r, v){
+  const f = P2.faces[id]; if(!f.r[r].word || f.r[r].conf===v) return;
+  f.r[r].conf = v; f.confChanges++;
+  log2('confidence', id, { rank:r, word:f.r[r].word, confidence:v }); refreshP2();
+}
+
+function validate2(){
+  const use1={}, use2={}; WORDS.forEach(w => { use1[w]=[]; use2[w]=[]; });
+  P2.faceOrder.forEach(id => { const f=P2.faces[id]; if(f.r[1].word) use1[f.r[1].word].push(id); if(f.r[2].word) use2[f.r[2].word].push(id); });
+  const miss1 = P2.faceOrder.filter(id => !P2.faces[id].r[1].word);
+  const miss2 = P2.faceOrder.filter(id => !P2.faces[id].r[2].word);
+  const noConf = []; P2.faceOrder.forEach(id => [1,2].forEach(r => { const s=P2.faces[id].r[r]; if(s.word && s.conf==null) noConf.push({id,r}); }));
+  const dup1 = CONFIG.uniqueFirst ? WORDS.filter(w => use1[w].length>1) : [];
+  const unused1 = CONFIG.uniqueFirst ? P2.wordOrder.filter(w => !use1[w].length) : [];
+  const dup2 = CONFIG.uniqueSecond ? WORDS.filter(w => use2[w].length>1) : [];
+  return { use1, use2, miss1, miss2, noConf, dup1, unused1, dup2,
+           ok: !miss1.length && !noConf.length && !dup1.length && !unused1.length && !dup2.length };
+}
+function refreshP2(){
+  const v = validate2();
+  $$('.chip').forEach(ch => {
+    const w = ch.dataset.word, n = v.use1[w].length;
+    ch.classList.toggle('used', n===1); ch.classList.toggle('dup', CONFIG.uniqueFirst && n>1);
+    $('.cnt',ch).textContent = n || '';
+    ch.setAttribute('aria-pressed', P2.armed===w ? 'true' : 'false');
+    ch.setAttribute('aria-label', `${w}, 1st choice for ${n} face${n===1?'':'s'}`);
+  });
+  const hint = $('#bankHint');
+  hint.textContent = P2.armed
+    ? `Tap a 1st or 2nd slot to place “${P2.armed}”. To cancel, tap the word again or press Esc.`
+    : 'Drag a word onto a slot, or tap a word and then tap a slot.';
+  hint.classList.toggle('arming', !!P2.armed);
+
+  P2.faceOrder.forEach(id => {
+    const f = P2.faces[id], c = cards[id];
+    [1,2].forEach(r => {
+      const s = f.r[r], box = c.rank[r];
+      $('.rslot',box).hidden = !!s.word;
+      $('.rslot',box).textContent = P2.armed ? `Place “${P2.armed}” here` : (r===2 ? 'Put your 2nd choice here (optional)' : 'Put your 1st choice here');
+      $('.rword',box).hidden = !s.word;
+      $('.rword .w',box).textContent = s.word || '';
+      $('.conf',box).hidden = !s.word;
+      $$('.cb',box).forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v===s.conf)));
+      const pool = r===1 ? (CONFIG.uniqueFirst ? v.use1 : null) : (CONFIG.uniqueSecond ? v.use2 : null);
+      const others = (pool && s.word) ? pool[s.word].filter(x=>x!==id).map(faceNo).sort((a,b)=>a-b) : [];
+      box.classList.toggle('dup', others.length>0);
+      box.classList.toggle('filled', !!s.word);
+      $('.dupnote',box).hidden = !others.length;
+      $('.dupnote',box).textContent = others.length ? `Same as the ${ord(r)} choice of face ${others.join(', ')}.` : '';
+    });
+    c.swap.hidden = !(f.r[1].word && f.r[2].word);
+  });
+
+  const n1 = N - v.miss1.length, n2 = N - v.miss2.length;
+  $('#s1').textContent = `${n1} / ${N}`; $('#s1').className = n1===N ? 'ok' : '';
+  $('#s2').textContent = `${n2} / ${N}`; $('#s2').className = n2===N ? 'ok' : '';
+  $('#sDup').textContent = v.dup1.length; $('#sDup').className = v.dup1.length ? 'bad' : '';
+  $('#sConf').textContent = v.noConf.length; $('#sConf').className = v.noConf.length ? 'bad' : '';
+  $('#mini').textContent = v.ok ? 'Ready to submit.' : `1st ${n1}/${N}, 2nd ${n2}/${N}, repeated ${v.dup1.length}, missing confidence ${v.noConf.length}`;
+}
+
+function openZoom(id){
+  const d=$('#zoom'); $('img',d).src=byId[id].src; $('img',d).alt=`Face photo ${faceNo(id)}, enlarged`;
+  $('#zoomTitle').textContent = `Face ${faceNo(id)}`; d.showModal();
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape' && S.page==='p2' && P2.armed) arm(null); });
+
+/* ===================== Submit (JSONL) ===================== */
+$('#submitBtn').addEventListener('click', () => {
+  const v = validate2();
+  if(!v.ok){
+    const nums = ids => ids.map(faceNo).sort((a,b)=>a-b).join(', ');
+    const items = [];
+    if(v.miss1.length) items.push(`Faces without a 1st choice: ${nums(v.miss1)}`);
+    v.dup1.forEach(w => items.push(`“${w}” is the 1st choice for faces ${nums(v.use1[w])}. Each word can be the 1st choice for only one face.`));
+    v.dup2.forEach(w => items.push(`“${w}” is the 2nd choice for faces ${nums(v.use2[w])}.`));
+    if(v.unused1.length) items.push(`Words not yet used as a 1st choice: ${v.unused1.join(', ')}`);
+    if(v.noConf.length) items.push(`Missing confidence ratings: ${v.noConf.sort((a,b)=>faceNo(a.id)-faceNo(b.id)||a.r-b.r).map(x=>`face ${faceNo(x.id)} ${ord(x.r)} choice`).join(', ')}`);
+    showIssues('You can’t submit yet', items);
+    const flagged = new Set([...v.miss1, ...v.noConf.map(x=>x.id), ...v.dup1.flatMap(w=>v.use1[w]), ...v.dup2.flatMap(w=>v.use2[w])]);
+    flagged.forEach(id => { const el=cards[id].el; el.classList.remove('flag'); void el.offsetWidth; el.classList.add('flag'); });
+    log2('submit_blocked', null, { miss1:v.miss1.length, dup1:v.dup1.length, no_conf:v.noConf.length });
+    return;
+  }
+  const submittedAt = new Date();
+  const common = { participant_id:S.pid, session_id:S.sessionId };
+
+  // Part 1: one similarity line
+  const simScores = Object.fromEntries(P0.resp.map(r => [r.pair_key, r.score]));
+  const simLine = {
+    ...common, part:'similarity',
+    n_pairs:P0.pairs.length, scale_min:CONFIG.simMin, scale_max:CONFIG.simMax,
+    scores:Object.fromEntries(CANONICAL_PAIRS.map(k => [k, simScores[k] ?? null])),
+    ratings:P0.resp, sheet_post:P0.sheet,
+    started_at:P0.startedAt.toISOString(), finished_at:P0.finishedAt.toISOString(),
+    duration_sec:+((P0.finishedAt-P0.startedAt)/1000).toFixed(1),
+    total_rating_ms:P0.resp.reduce((t,r)=>t+r.duration_ms,0)
+  };
+
+  // Part 2: one grouping line
+  const used = P1.groups.filter(g => gWords(g).length);
+  const groups = used.map((g,i) => ({ group_no:i+1, label_shown:`Group ${g.num}`, color:gColor(g), name:g.name, size:gWords(g).length, words:gWords(g) }));
+  const assignment = {}; WORDS.forEach(w => { assignment[w] = used.findIndex(g => g.id===P1.assign[w]) + 1; });
+  const lines = [simLine, {
+    ...common, part:'word_clustering',
+    n_words:N, n_groups:groups.length, groups, assignment,
+    card_order:P1.order, history:P1.events,
+    started_at:P1.startedAt.toISOString(), finished_at:P1.finishedAt.toISOString(),
+    duration_sec:+((P1.finishedAt-P1.startedAt)/1000).toFixed(1)
+  }];
+
+  // Part 3: one line per face
+  P2.faceOrder.forEach((id,i) => {
+    const it=byId[id], f=P2.faces[id];
+    lines.push({
+      ...common, part:'face_matching',
+      face_no:i+1, image_id:id, image_file:it.file, target_word:it.word, target_word_ko:it.word_ko,
+      rank1_word:f.r[1].word, rank1_confidence:f.r[1].conf,
+      rank2_word:f.r[2].word, rank2_confidence:f.r[2].conf,
+      rank1_correct:f.r[1].word===it.word, target_in_top2:(f.r[1].word===it.word || f.r[2].word===it.word),
+      n_word_changes:f.wordChanges, n_confidence_changes:f.confChanges,
+      history:P2.events.filter(e=>e.image_id===id).map(({image_id, ...rest}) => rest),
+      word_bank_order:P2.wordOrder,
+      started_at:P2.startedAt.toISOString(), submitted_at:submittedAt.toISOString(),
+      duration_sec:+((submittedAt-P2.startedAt)/1000).toFixed(1)
+    });
+  });
+
+  S.output = { name:`emotion_survey_en_${S.pid}_${stamp(submittedAt)}.jsonl`, text: lines.map(l=>JSON.stringify(l)).join('\n') + '\n' };
+  download(S.output.name, S.output.text);
+  go('done');
+  $('#doneText').textContent = `Your response file (${S.output.name}) has been downloaded. If you can't find it, press the button below to save it again. Once it is saved, you may close this window.`;
+});
+$('#resaveBtn').addEventListener('click', () => download(S.output.name, S.output.text));
+window.addEventListener('beforeunload', e => { if(S.page==='p0' || S.page==='p1' || S.page==='p2'){ e.preventDefault(); e.returnValue=''; } });
+</script>
+</body>
+</html>
