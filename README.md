@@ -1,6 +1,6 @@
 # Emotion Word Survey (English)
 
-A three-part web survey built around 13 emotion words and 13 photos of facial expressions. It is a single `index.html` file, and responses are downloaded as a JSONL file on submission. This is the English version of [emotion-survey](https://github.com/yerinNam/emotion-survey); the Korean emotion words are shown with the English labels listed below.
+A three-part web survey built around 13 emotion words and 13 photos of facial expressions. It is an `index.html` plus an `img/` folder of face photos, and responses are downloaded as a JSONL file on submission. This is the English version of [emotion-survey](https://github.com/yerinNam/emotion-survey); the Korean emotion words are shown with the English labels listed below.
 
 Live site: https://yerinnam.github.io/emotion-survey-en/
 
@@ -120,13 +120,14 @@ pip install pillow
 python build.py
 ```
 
-Images are embedded as lossless WebP and checked pixel-for-pixel against the originals; resolution and quality are unchanged.
+Images are saved separately in `img/` as WebP (quality 90) at the original resolution; the build prints the mean difference from the originals (about 1.4/255). Keeping photos out of the HTML makes the page about 50 KB, so it opens immediately, and the photos are preloaded while the participant works on Part 1.
 
 ## Files
 
 ```
-index.html                 # survey file for participants (images embedded, ~25 MB)
-build.py                   # builds index.html from stimuli/
+index.html                 # survey page (~50 KB)
+img/                       # 13 face photos (WebP, ~1.6 MB total)
+build.py                   # builds index.html and img/ from stimuli/
 src/survey_template.html   # survey UI and logic (without images)
 stimuli/                   # 13 original face images and the word list CSV
 ```
