@@ -224,7 +224,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <h1>Emotion Word Survey</h1>
   <p class="lede">This survey has three parts. There are no right or wrong answers, so please answer based on how you feel.</p>
   <ol class="parts">
-    <li><strong>Emotion similarity rating.</strong> You will see emotion words two at a time and rate how similar their meanings are, from 1 to 10. There are 78 pairs in total.</li>
+    <li><strong>Emotion similarity rating.</strong> You will see emotion words two at a time and rate how similar their meanings are, from 0 to 10. There are 78 pairs in total.</li>
     <li><strong>Grouping emotion words.</strong> Colour the 13 emotion words so that words you feel have similar meanings share the same colour.</li>
     <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and the next best as your 2nd choice. Rate your confidence in each from 1 to 5.</li>
   </ol>
@@ -245,7 +245,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <main class="page simpage">
     <p class="stage">Part 1 of 3</p>
     <h1>Emotion Similarity Rating</h1>
-    <p class="lede">Move the slider to rate how similar the meanings of the two emotion words are, from 1 to 10. You need to move the slider before you can go to the next pair, and you can press “Previous” to go back and change an earlier answer.</p>
+    <p class="lede">Move the slider to rate how similar the meanings of the two emotion words are, from 0 to 10. You need to move the slider before you can go to the next pair, and you can press “Previous” to go back and change an earlier answer.</p>
     <div class="simcard" id="simCard">
       <p class="simq">How semantically similar do you think these two emotions are?</p>
       <div class="pair"><div class="pw" id="simW1"></div><div class="pw" id="simW2"></div></div>
@@ -364,7 +364,7 @@ const CONFIG = {
   uniqueSecond: false,       // if true, 2nd choices must not repeat either
   // Part 1 similarity rating (78 pairs)
   shufflePairs: true,        // randomise pair order (and left/right position within a pair)
-  simMin: 1, simMax: 10, simDefault: 1,
+  simMin: 0, simMax: 10, simDefault: 0,
   // Also send similarity scores to a Google Sheet (Code.gs web-app URL). Empty string = do not send
   sheetUrl: 'https://script.google.com/macros/s/AKfycby8MnZ7NNk7ND2VsRTYR7W2MjoIX6S2tvczAmZfSTGuZcrYCqTYsS4jdYCyVCpi-m2_/exec',
   sheetName: '응답 결과(외국인)',  // sheet tab for English-version responses
@@ -438,7 +438,7 @@ function initP0(){
   const r = $('#simRange');
   r.min = CONFIG.simMin; r.max = CONFIG.simMax;
   r.setAttribute('aria-label', `Similarity score (${CONFIG.simMin} to ${CONFIG.simMax})`);
-  $('#simMinLbl').textContent = `(${CONFIG.simMin} pt)`; $('#simMaxLbl').textContent = `(${CONFIG.simMax} pts)`;
+  $('#simMinLbl').textContent = `(${CONFIG.simMin} ${CONFIG.simMin===1?"pt":"pts"})`; $('#simMaxLbl').textContent = `(${CONFIG.simMax} pts)`;
   P0.startedAt = new Date();
   loadSim(0);
 }
