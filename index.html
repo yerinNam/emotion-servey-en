@@ -118,9 +118,12 @@ h2{font-size:16px; font-weight:600; margin:0}
 .chip{appearance:none; font:inherit; font-size:14px; line-height:1.25; text-align:left; font-weight:600; color:var(--ink); background:var(--word); border:0; border-radius:10px; min-height:42px; padding:6px 12px; display:inline-flex; align-items:center; gap:7px; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:manipulation}
 .chip .cnt{font-size:12px; font-weight:700; min-width:20px; height:20px; border-radius:10px; display:none; place-items:center; padding:0 6px; font-variant-numeric:tabular-nums}
 .chip.used{background:transparent; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line)}
-.chip.used .cnt{display:inline-grid; background:var(--ok-bg); color:var(--ok)}
+.chip .cnt.on{display:inline-grid}
+.chip .cnt.c1{background:var(--r1); color:var(--r1-ink)}
+.chip .cnt.c2{background:var(--r2); color:var(--r2-ink)}
 .chip.dup{background:var(--bad-bg); color:var(--bad); box-shadow:inset 0 0 0 1.5px var(--bad)}
-.chip.dup .cnt{display:inline-grid; background:var(--bad); color:var(--surface)}
+.chip.dup .cnt.c1{background:var(--bad); color:var(--surface)}
+.chip[aria-pressed="true"] .cnt{box-shadow:0 0 0 1.5px var(--primary-ink)}
 .chip[aria-pressed="true"]{background:var(--primary); color:var(--primary-ink); box-shadow:none}
 .legend{color:var(--muted); font-size:12.5px; margin:12px 0 0}
 .status{margin:0 0 14px; display:grid; gap:6px; font-size:14px}
@@ -223,7 +226,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <ol class="parts">
     <li><strong>Emotion similarity rating.</strong> You will see emotion words two at a time and rate how similar their meanings are, from 1 to 10. There are 78 pairs in total.</li>
     <li><strong>Grouping emotion words.</strong> Colour the 13 emotion words so that words you feel have similar meanings share the same colour.</li>
-    <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and rate your confidence from 1 to 5. While deciding you can park a candidate word in the 2nd slot, but when you submit each face must have only its 1st choice.</li>
+    <li><strong>Matching faces and words.</strong> For each of the 13 face photos, choose the emotion word that fits best as your 1st choice and the next best as your 2nd choice. Rate your confidence in each from 1 to 5.</li>
   </ol>
   <div class="field">
     <label for="pid">Participant ID</label>
@@ -285,7 +288,7 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
   <header class="p2head">
     <p class="stage">Part 3 of 3</p>
     <h1>Matching Faces and Words</h1>
-    <p class="lede">For every face, choose a 1st-choice emotion word and rate your confidence. The 2nd slot is a place to park a candidate while you decide; it must be empty for every face before you submit. Drag a word onto a slot, or tap a word and then tap a slot. To submit, each word must be used as the 1st choice for exactly one face.</p>
+    <p class="lede">For every face, choose a 1st- and 2nd-choice emotion word and rate your confidence in each. Drag a word onto a slot, or tap a word and then tap a slot. To submit, each word must be used as the 1st choice for exactly one face.</p>
   </header>
   <div class="layout">
     <aside class="side">
@@ -293,12 +296,12 @@ dialog::backdrop{background:rgba(10,11,14,.55)}
         <h2>Emotion words</h2>
         <p class="hint" id="bankHint" aria-live="polite"></p>
         <div class="chips" id="chips"></div>
-        <p class="legend">The number shows how many faces use that word as their 1st choice. Red means the word is the 1st choice for more than one face.</p>
+        <p class="legend">A 1 or 2 next to a word means it is used as a 1st or 2nd choice; ×n shows on how many faces. Red means the word is the 1st choice for more than one face.</p>
       </section>
       <section class="savebar" aria-label="Progress and submission">
         <dl class="status">
           <div><dt>Faces with a 1st choice</dt><dd id="s1"></dd></div>
-          <div><dt>Faces with a 2nd choice left</dt><dd id="s2"></dd></div>
+          <div><dt>Faces with a 2nd choice</dt><dd id="s2"></dd></div>
           <div><dt>Words used twice as 1st</dt><dd id="sDup"></dd></div>
           <div><dt>Missing confidence ratings</dt><dd id="sConf"></dd></div>
         </dl>
@@ -575,7 +578,7 @@ function initP2(){
   buildBank(); buildGrid(); refreshP2();
 }
 function buildBank(){
-  $('#chips').innerHTML = P2.wordOrder.map(w => `<button class="chip" type="button" draggable="true" data-word="${esc(w)}" aria-pressed="false"><span>${esc(w)}</span><span class="cnt" aria-hidden="true"></span></button>`).join('');
+  $('#chips').innerHTML = P2.wordOrder.map(w => `<button class="chip" type="button" draggable="true" data-word="${esc(w)}" aria-pressed="false"><span>${esc(w)}</span><span class="cnt c1" aria-hidden="true"></span><span class="cnt c2" aria-hidden="true"></span></button>`).join('');
   $$('.chip').forEach(ch => {
     const w = ch.dataset.word;
     ch.addEventListener('click', () => arm(P2.armed===w ? null : w));
@@ -684,22 +687,23 @@ function validate2(){
   P2.faceOrder.forEach(id => { const f=P2.faces[id]; if(f.r[1].word) use1[f.r[1].word].push(id); if(f.r[2].word) use2[f.r[2].word].push(id); });
   const miss1 = P2.faceOrder.filter(id => !P2.faces[id].r[1].word);
   const miss2 = P2.faceOrder.filter(id => !P2.faces[id].r[2].word);
-  const has2 = P2.faceOrder.filter(id => P2.faces[id].r[2].word);   // 2nd slot must be empty on submit
-  const noConf = []; P2.faceOrder.forEach(id => [1].forEach(r => { const s=P2.faces[id].r[r]; if(s.word && s.conf==null) noConf.push({id,r}); }));
+  const noConf = []; P2.faceOrder.forEach(id => [1,2].forEach(r => { const s=P2.faces[id].r[r]; if(s.word && s.conf==null) noConf.push({id,r}); }));
   const dup1 = CONFIG.uniqueFirst ? WORDS.filter(w => use1[w].length>1) : [];
   const unused1 = CONFIG.uniqueFirst ? P2.wordOrder.filter(w => !use1[w].length) : [];
   const dup2 = CONFIG.uniqueSecond ? WORDS.filter(w => use2[w].length>1) : [];
-  return { use1, use2, miss1, miss2, has2, noConf, dup1, unused1, dup2,
-           ok: !miss1.length && !has2.length && !noConf.length && !dup1.length && !unused1.length && !dup2.length };
+  return { use1, use2, miss1, miss2, noConf, dup1, unused1, dup2,
+           ok: !miss1.length && !miss2.length && !noConf.length && !dup1.length && !unused1.length && !dup2.length };
 }
 function refreshP2(){
   const v = validate2();
   $$('.chip').forEach(ch => {
     const w = ch.dataset.word, n = v.use1[w].length;
     ch.classList.toggle('used', n===1); ch.classList.toggle('dup', CONFIG.uniqueFirst && n>1);
-    $('.cnt',ch).textContent = n || '';
+    const m = v.use2[w].length, c1 = $('.c1',ch), c2 = $('.c2',ch);   // badges: used as 1st / 2nd choice
+    c1.textContent = n>1 ? `1×${n}` : '1'; c1.classList.toggle('on', n>0);
+    c2.textContent = m>1 ? `2×${m}` : '2'; c2.classList.toggle('on', m>0);
     ch.setAttribute('aria-pressed', P2.armed===w ? 'true' : 'false');
-    ch.setAttribute('aria-label', `${w}, 1st choice for ${n} face${n===1?'':'s'}`);
+    ch.setAttribute('aria-label', `${w}, 1st choice for ${n} face${n===1?'':'s'}, 2nd choice for ${m} face${m===1?'':'s'}`);
   });
   const hint = $('#bankHint');
   hint.textContent = P2.armed
@@ -712,10 +716,10 @@ function refreshP2(){
     [1,2].forEach(r => {
       const s = f.r[r], box = c.rank[r];
       $('.rslot',box).hidden = !!s.word;
-      $('.rslot',box).textContent = P2.armed ? `Place “${P2.armed}” here` : (r===2 ? 'Park a candidate here (clear before submitting)' : 'Put your 1st choice here');
+      $('.rslot',box).textContent = P2.armed ? `Place “${P2.armed}” here` : `Put your ${ord(r)} choice here`;
       $('.rword',box).hidden = !s.word;
       $('.rword .w',box).textContent = s.word || '';
-      $('.conf',box).hidden = !s.word || r===2;   // no confidence for the 2nd (candidate) slot
+      $('.conf',box).hidden = !s.word;
       $$('.cb',box).forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v===s.conf)));
       const pool = r===1 ? (CONFIG.uniqueFirst ? v.use1 : null) : (CONFIG.uniqueSecond ? v.use2 : null);
       const others = (pool && s.word) ? pool[s.word].filter(x=>x!==id).map(faceNo).sort((a,b)=>a-b) : [];
@@ -729,10 +733,10 @@ function refreshP2(){
 
   const n1 = N - v.miss1.length, n2 = N - v.miss2.length;
   $('#s1').textContent = `${n1} / ${N}`; $('#s1').className = n1===N ? 'ok' : '';
-  $('#s2').textContent = v.has2.length; $('#s2').className = v.has2.length ? 'bad' : '';
+  $('#s2').textContent = `${n2} / ${N}`; $('#s2').className = n2===N ? 'ok' : '';
   $('#sDup').textContent = v.dup1.length; $('#sDup').className = v.dup1.length ? 'bad' : '';
   $('#sConf').textContent = v.noConf.length; $('#sConf').className = v.noConf.length ? 'bad' : '';
-  $('#mini').textContent = v.ok ? 'Ready to submit.' : `1st ${n1}/${N}, 2nd left ${v.has2.length}, repeated ${v.dup1.length}, missing confidence ${v.noConf.length}`;
+  $('#mini').textContent = v.ok ? 'Ready to submit.' : `1st ${n1}/${N}, 2nd ${n2}/${N}, repeated ${v.dup1.length}, missing confidence ${v.noConf.length}`;
 }
 
 function openZoom(id){
@@ -748,15 +752,15 @@ $('#submitBtn').addEventListener('click', () => {
     const nums = ids => ids.map(faceNo).sort((a,b)=>a-b).join(', ');
     const items = [];
     if(v.miss1.length) items.push(`Faces without a 1st choice: ${nums(v.miss1)}`);
+    if(v.miss2.length) items.push(`Faces without a 2nd choice: ${nums(v.miss2)}`);
     v.dup1.forEach(w => items.push(`“${w}” is the 1st choice for faces ${nums(v.use1[w])}. Each word can be the 1st choice for only one face.`));
     v.dup2.forEach(w => items.push(`“${w}” is the 2nd choice for faces ${nums(v.use2[w])}.`));
     if(v.unused1.length) items.push(`Words not yet used as a 1st choice: ${v.unused1.join(', ')}`);
-    if(v.has2.length) items.push(`Faces that still have a 2nd choice: ${nums(v.has2)}. Before submitting, clear the 2nd slots so each face keeps only its 1st choice.`);
     if(v.noConf.length) items.push(`Missing confidence ratings: ${v.noConf.sort((a,b)=>faceNo(a.id)-faceNo(b.id)||a.r-b.r).map(x=>`face ${faceNo(x.id)} ${ord(x.r)} choice`).join(', ')}`);
     showIssues('You can’t submit yet', items);
-    const flagged = new Set([...v.miss1, ...v.has2, ...v.noConf.map(x=>x.id), ...v.dup1.flatMap(w=>v.use1[w]), ...v.dup2.flatMap(w=>v.use2[w])]);
+    const flagged = new Set([...v.miss1, ...v.miss2, ...v.noConf.map(x=>x.id), ...v.dup1.flatMap(w=>v.use1[w]), ...v.dup2.flatMap(w=>v.use2[w])]);
     flagged.forEach(id => { const el=cards[id].el; el.classList.remove('flag'); void el.offsetWidth; el.classList.add('flag'); });
-    log2('submit_blocked', null, { miss1:v.miss1.length, rank2_left:v.has2.length, dup1:v.dup1.length, no_conf:v.noConf.length });
+    log2('submit_blocked', null, { miss1:v.miss1.length, miss2:v.miss2.length, dup1:v.dup1.length, no_conf:v.noConf.length });
     return;
   }
   const submittedAt = new Date();
